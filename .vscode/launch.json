@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Program",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/dist/main.js",
+      "outFiles": ["${workspaceFolder}/**/*.js"],
+      "args": [
+        "source_images/one-does-not-simply.ppm",
+        "key_images/one-does-not-simply.ppm",
+        "emboss"
+      ],
+      "skipFiles": ["<node_internals>/**"],
+      "preLaunchTask": {
+        "type": "typescript",
+        "tsconfig": "tsconfig.json"
+      }
+    }
+  ]
+}
