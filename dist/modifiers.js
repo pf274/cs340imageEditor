@@ -97,7 +97,14 @@ const convertToMotionBlurred = (sourceImage, amount) => {
     for (let rowIndex = 0; rowIndex < sourceImage.pixels.length; rowIndex++) {
         const row = sourceImage.pixels[rowIndex];
         for (let colIndex = 0; colIndex < row.length; colIndex++) {
-            const inputPixels = row.slice(colIndex, Math.min(row.length - 1, colIndex + amount));
+            const lastIndex = Math.min(row.length - 1, colIndex + amount);
+            let inputPixels;
+            if (lastIndex == colIndex) {
+                inputPixels = [row[colIndex]];
+            }
+            else {
+                inputPixels = row.slice(colIndex, Math.min(row.length - 1, colIndex + amount));
+            }
             const outputPixel = newImage.pixels[rowIndex][colIndex];
             const total = { red: 0, green: 0, blue: 0 };
             inputPixels.forEach((inputPixel) => {
@@ -106,9 +113,9 @@ const convertToMotionBlurred = (sourceImage, amount) => {
                 total.blue += inputPixel.blue;
             });
             const averages = {
-                red: total.red / inputPixels.length,
-                green: total.green / inputPixels.length,
-                blue: total.blue / inputPixels.length,
+                red: Math.floor(total.red / inputPixels.length),
+                green: Math.floor(total.green / inputPixels.length),
+                blue: Math.floor(total.blue / inputPixels.length),
             };
             outputPixel.red = averages.red;
             outputPixel.green = averages.green;

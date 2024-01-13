@@ -8,11 +8,14 @@ const whitespaceRegex: RegExp = /\s+/g;
 function main(): void {
   console.log(process.argv);
   const sourceImagePath: string = process.argv[2];
-  const imageName: string = sourceImagePath.split("/").pop() || "newImage.ppm";
-  const keyImagePath: string = process.argv[3];
+  const outputImagePath: string = process.argv[3];
   const commandType: string = process.argv[4];
   // prepare source image data
-  const sourceImage: PpmImage = getPpm(sourceImagePath);
+  const sourceImage: PpmImage | undefined = getPpm(sourceImagePath);
+  if (!sourceImage) {
+    showUsage();
+    return;
+  }
   let modifiedImage: PpmImage | undefined;
   // process command
   switch (commandType) {
@@ -28,18 +31,25 @@ function main(): void {
       break;
     case 'motionblur':
       if (!process.argv[5]) {
-        throw new Error('Missing motion blur amount argument');
+        showUsage();
+        return;
       }
       modifiedImage = convertToMotionBlurred(sourceImage, parseInt(process.argv[5]));
       break;
     default:
-      throw new Error('Invalid command type.');
+      showUsage();
+      return;
   }
-  savePpmImage(modifiedImage, `./Images/output_images/${imageName}`);
+  const success: boolean = savePpmImage(modifiedImage, outputImagePath);
+  if (!success) {
+    showUsage();
+  } else {
+    console.log(`Image successfully modified and saved to '${outputImagePath}'`);
+  }
 }
 
-function getPpm(imageName: string): PpmImage {
-  let newPpmImage: PpmImage = {
+function getPpm(sourcePath: string): PpmImage | undefined {
+  const loadedPpmImage: PpmImage = {
     resolution: {
       width: 0,
       height: 0,
@@ -49,7 +59,7 @@ function getPpm(imageName: string): PpmImage {
   }
   try {
     // load the file
-    const result: Buffer = fs.readFileSync(`./Images/${imageName}`);
+    const result: Buffer = fs.readFileSync(sourcePath);
     const resultString: string = result.toString();
     let formattedString: string = resultString.replace(commentsRegex, " ");
     formattedString = formattedString.replace(whitespaceRegex, ' ').trim();
@@ -58,30 +68,40 @@ function getPpm(imageName: string): PpmImage {
     if (numbers.length < 2) {
       throw new Error("Malformed ppm file data.");
     }
-    newPpmImage.resolution.width = numbers.shift() || 0; // the zero is here because .shift() can return undefined
-    newPpmImage.resolution.height = numbers.shift() || 0; // the zero is here because .shift() can return undefined
-    newPpmImage.pixels = new Array(newPpmImage.resolution.height).fill(0).map(() => []);
-    newPpmImage.maxColorValue = numbers.shift() || 0;
+    loadedPpmImage.resolution.width = numbers.shift() || 0; // the zero is here because .shift() can return undefined
+    loadedPpmImage.resolution.height = numbers.shift() || 0; // the zero is here because .shift() can return undefined
+    loadedPpmImage.pixels = new Array(loadedPpmImage.resolution.height).fill(0).map(() => []);
+    loadedPpmImage.maxColorValue = numbers.shift() || 0;
     if (numbers.length % 3 != 0) {
       throw new Error("Malformed ppm file data.");
     }
     for (let i = 0; i <= numbers.length - 3; i+= 3) {
-      const row: number = Math.floor(i / newPpmImage.resolution.width / 3);
+      const row: number = Math.floor(i / loadedPpmImage.resolution.width / 3);
       const pixel: PpmPixel = {red: numbers[i], green: numbers[i + 1], blue: numbers[i + 2]};
-      newPpmImage.pixels[row].push(pixel);
+      loadedPpmImage.pixels[row].push(pixel);
     }
+    return loadedPpmImage;
   } catch (err: any) {
     console.log(`Error getting Ppm image: ${err.message}`);
   }
-  return newPpmImage;
 }
 
-function savePpmImage(imageToSave: PpmImage, destination: string): void {
-  const {width, height} = imageToSave.resolution;
-  const {pixels, maxColorValue} = imageToSave;
-  const outputString: string = `P3 ${width} ${height} ${maxColorValue} ${pixels.flat(1).map((pixel: PpmPixel) => `${pixel.red} ${pixel.green} ${pixel.blue}`).join(" ")}`;
-  const outputBuffer: Buffer = Buffer.from(outputString);
-  writeFileSync(destination, outputBuffer);
+function savePpmImage(imageToSave: PpmImage, destination: string): boolean {
+  try {
+    const {width, height} = imageToSave.resolution;
+    const {pixels, maxColorValue} = imageToSave;
+    const outputString: string = `P3 ${width} ${height} ${maxColorValue} ${pixels.flat(1).map((pixel: PpmPixel) => `${pixel.red} ${pixel.green} ${pixel.blue}`).join(" ")}`;
+    const outputBuffer: Buffer = Buffer.from(outputString);
+    writeFileSync(destination, outputBuffer);
+    return true;
+  } catch (err: any) {
+    console.log(`Error saving modified image: ${err.message}`);
+    return false;
+  }
+}
+
+function showUsage(): void {
+  console.log('Usage:\n\tnode ./main.js <inputFilePath> <outputFilePath> (grayscale|invert|emboss|motionblur) {motionBlurLength}');
 }
 
 main();

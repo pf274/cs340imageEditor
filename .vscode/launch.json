@@ -8,9 +8,10 @@
       "program": "${workspaceFolder}/dist/main.js",
       "outFiles": ["${workspaceFolder}/**/*.js"],
       "args": [
-        "source_images/one-does-not-simply.ppm",
-        "key_images/one-does-not-simply.ppm",
-        "emboss"
+        "Images/source_images/feep.ppm",
+        "Images/key_images/feep.ppm",
+        "motionblur",
+        "10"
       ],
       "skipFiles": ["<node_internals>/**"],
       "preLaunchTask": {
