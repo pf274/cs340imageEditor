@@ -1,9 +1,7 @@
+import PpmImage from "./PpmImage";
 import { convertToEmbossed, convertToGrayscale, convertToInverted, convertToMotionBlurred } from "./modifiers";
-import { Modifier, PpmImage, PpmPixel } from "./types";
+import { PpmPixel } from "./types";
 import fs, { writeFileSync } from 'fs';
-
-const commentsRegex: RegExp = /#.*?\r?\n/g;
-const whitespaceRegex: RegExp = /\s+/g;
 
 function main(): void {
   console.log(process.argv);
@@ -11,7 +9,7 @@ function main(): void {
   const outputImagePath: string = process.argv[3];
   const commandType: string = process.argv[4];
   // prepare source image data
-  const sourceImage: PpmImage | undefined = getPpm(sourceImagePath);
+  const sourceImage: PpmImage | undefined = getPpmFromFile(sourceImagePath);
   if (!sourceImage) {
     showUsage();
     return;
@@ -40,53 +38,25 @@ function main(): void {
       showUsage();
       return;
   }
-  const success: boolean = savePpmImage(modifiedImage, outputImagePath);
-  if (!success) {
-    showUsage();
-  } else {
+  const success: boolean = savePpmImageToFile(modifiedImage, outputImagePath);
+  if (success) {
     console.log(`Image successfully modified and saved to '${outputImagePath}'`);
+  } else {
+    showUsage();
   }
 }
 
-function getPpm(sourcePath: string): PpmImage | undefined {
-  const loadedPpmImage: PpmImage = {
-    resolution: {
-      width: 0,
-      height: 0,
-    },
-    pixels: [],
-    maxColorValue: 0,
-  }
+function getPpmFromFile(sourcePath: string): PpmImage | undefined {
   try {
-    // load the file
     const result: Buffer = fs.readFileSync(sourcePath);
     const resultString: string = result.toString();
-    let formattedString: string = resultString.replace(commentsRegex, " ");
-    formattedString = formattedString.replace(whitespaceRegex, ' ').trim();
-    const numbers: number[] = formattedString.split(' ').slice(1).map((num: string) => parseInt(num));
-    // process the numbers
-    if (numbers.length < 2) {
-      throw new Error("Malformed ppm file data.");
-    }
-    loadedPpmImage.resolution.width = numbers.shift() || 0; // the zero is here because .shift() can return undefined
-    loadedPpmImage.resolution.height = numbers.shift() || 0; // the zero is here because .shift() can return undefined
-    loadedPpmImage.pixels = new Array(loadedPpmImage.resolution.height).fill(0).map(() => []);
-    loadedPpmImage.maxColorValue = numbers.shift() || 0;
-    if (numbers.length % 3 != 0) {
-      throw new Error("Malformed ppm file data.");
-    }
-    for (let i = 0; i <= numbers.length - 3; i+= 3) {
-      const row: number = Math.floor(i / loadedPpmImage.resolution.width / 3);
-      const pixel: PpmPixel = {red: numbers[i], green: numbers[i + 1], blue: numbers[i + 2]};
-      loadedPpmImage.pixels[row].push(pixel);
-    }
-    return loadedPpmImage;
+    return PpmImage.fromString(resultString);
   } catch (err: any) {
     console.log(`Error getting Ppm image: ${err.message}`);
   }
 }
 
-function savePpmImage(imageToSave: PpmImage, destination: string): boolean {
+function savePpmImageToFile(imageToSave: PpmImage, destination: string): boolean {
   try {
     const {width, height} = imageToSave.resolution;
     const {pixels, maxColorValue} = imageToSave;

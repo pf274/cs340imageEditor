@@ -1,17 +1,12 @@
-import { Modifier, PpmImage, PpmPixel } from "./types";
+import PpmImage from "./PpmImage";
+import { Modifier, PpmPixel } from "./types";
 
 export const convertToInverted: Modifier = (sourceImage): PpmImage => {
-  const newImage: PpmImage = {
-    resolution: {
-      width: sourceImage.resolution.width,
-      height: sourceImage.resolution.height,
-    },
-    maxColorValue: sourceImage.maxColorValue,
-    pixels: new Array(sourceImage.resolution.height).fill(0).map(() => new Array(sourceImage.resolution.width).fill(0).map(() => ({red: 0, green: 0, blue: 0})))
-  }
-  for (let rowIndex = 0; rowIndex < sourceImage.pixels.length; rowIndex++) {
+  const newImage: PpmImage = sourceImage.clone();
+  const {width: numCols, height: numRows} = sourceImage.resolution;
+  for (let rowIndex = 0; rowIndex < numRows; rowIndex++) {
     const row: PpmPixel[] = sourceImage.pixels[rowIndex];
-    for (let colIndex = 0; colIndex < row.length; colIndex++) {
+    for (let colIndex = 0; colIndex < numCols; colIndex++) {
       const inputPixel: PpmPixel = row[colIndex];
       const outputPixel: PpmPixel = newImage.pixels[rowIndex][colIndex];
       outputPixel.red = sourceImage.maxColorValue - inputPixel.red;
@@ -23,17 +18,11 @@ export const convertToInverted: Modifier = (sourceImage): PpmImage => {
 }
 
 export const convertToGrayscale: Modifier = (sourceImage): PpmImage => {
-  const newImage: PpmImage = {
-    resolution: {
-      width: sourceImage.resolution.width,
-      height: sourceImage.resolution.height,
-    },
-    maxColorValue: sourceImage.maxColorValue,
-    pixels: new Array(sourceImage.resolution.height).fill(0).map(() => new Array(sourceImage.resolution.width).fill(0).map(() => ({red: 0, green: 0, blue: 0})))
-  }
-  for (let rowIndex = 0; rowIndex < sourceImage.pixels.length; rowIndex++) {
+  const newImage: PpmImage = sourceImage.clone();
+  const {width: numCols, height: numRows} = sourceImage.resolution;
+  for (let rowIndex = 0; rowIndex < numRows; rowIndex++) {
     const row: PpmPixel[] = sourceImage.pixels[rowIndex];
-    for (let colIndex = 0; colIndex < row.length; colIndex++) {
+    for (let colIndex = 0; colIndex < numCols; colIndex++) {
       const inputPixel: PpmPixel = row[colIndex];
       const outputPixel: PpmPixel = newImage.pixels[rowIndex][colIndex];
       const average: number = Math.floor(Object.values(inputPixel).reduce((total, color) => total + color, 0) / 3);
@@ -46,17 +35,10 @@ export const convertToGrayscale: Modifier = (sourceImage): PpmImage => {
 }
 
 export const convertToEmbossed: Modifier = (sourceImage): PpmImage => {
-  const newImage: PpmImage = {
-    resolution: {
-      width: sourceImage.resolution.width,
-      height: sourceImage.resolution.height,
-    },
-    maxColorValue: sourceImage.maxColorValue,
-    pixels: new Array(sourceImage.resolution.height).fill(0).map(() => new Array(sourceImage.resolution.width).fill(0).map(() => ({red: 0, green: 0, blue: 0})))
-  }
-  for (let rowIndex = 0; rowIndex < sourceImage.pixels.length; rowIndex++) {
-    const row: PpmPixel[] = sourceImage.pixels[rowIndex];
-    for (let colIndex = 0; colIndex < row.length; colIndex++) {
+  const newImage: PpmImage = sourceImage.clone();
+  const {width: numCols, height: numRows} = sourceImage.resolution;
+  for (let rowIndex = 0; rowIndex < numRows; rowIndex++) {
+    for (let colIndex = 0; colIndex < numCols; colIndex++) {
       const inputPixel: PpmPixel = sourceImage.pixels[rowIndex][colIndex];
       const outputPixel: PpmPixel = newImage.pixels[rowIndex][colIndex];
       let v: number;
@@ -84,24 +66,12 @@ export const convertToEmbossed: Modifier = (sourceImage): PpmImage => {
 }
 
 export const convertToMotionBlurred: Modifier = (sourceImage, amount: number): PpmImage => {
-  const newImage: PpmImage = {
-    resolution: {
-      width: sourceImage.resolution.width,
-      height: sourceImage.resolution.height,
-    },
-    maxColorValue: sourceImage.maxColorValue,
-    pixels: new Array(sourceImage.resolution.height).fill(0).map(() => new Array(sourceImage.resolution.width).fill(0).map(() => ({red: 0, green: 0, blue: 0})))
-  }
-  for (let rowIndex = 0; rowIndex < sourceImage.pixels.length; rowIndex++) {
+  const newImage: PpmImage = sourceImage.clone();
+  const {width: numCols, height: numRows} = sourceImage.resolution;
+  for (let rowIndex = 0; rowIndex < numRows; rowIndex++) {
     const row: PpmPixel[] = sourceImage.pixels[rowIndex];
-    for (let colIndex = 0; colIndex < row.length; colIndex++) {
-      const lastIndex = Math.min(row.length - 1, colIndex + amount);
-      let inputPixels: PpmPixel[];
-      if (lastIndex == colIndex) {
-        inputPixels = [row[colIndex]];
-      } else {
-        inputPixels = row.slice(colIndex, Math.min(row.length - 1, colIndex + amount));
-      }
+    for (let colIndex = 0; colIndex < numCols; colIndex++) {
+      const inputPixels: PpmPixel[] = row.slice(colIndex, Math.min(numCols, colIndex + amount));
       const outputPixel: PpmPixel = newImage.pixels[rowIndex][colIndex];
       const total = {red: 0, green: 0, blue: 0};
       inputPixels.forEach((inputPixel) => {

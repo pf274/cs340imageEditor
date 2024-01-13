@@ -1,8 +1,4 @@
-export type PpmImage = {
-  resolution: PpmResolution,
-  pixels: PpmPixel[][],
-  maxColorValue: number
-}
+import PpmImage from "./PpmImage";
 
 export type PpmResolution = {
   width: number,
